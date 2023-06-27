@@ -84,99 +84,77 @@ Name of the files, Length of Date value in Filename, Length of Time value in Fil
      is selected
 
 
-## Create a file "Dockerfile" with below content
-
-```
-FROM python:3.7
-COPY . /app
-WORKDIR /app
-RUN pip install -r requirements.txt
-ENTRYPOINT [ "python" ]
-CMD [ "main.py" ]
-```
-
 ## Create a "Procfile" with following content
 ```
 web: gunicorn main:app
 ```
 
-## create a file ".circleci\config.yml" with following content
+## create a file ".github/workflows/main_creditcardf01.yml" with following content
 ```
-version: 2.1
-orbs:
-  heroku: circleci/heroku@1.0.1
-jobs:
-  build-and-test:
-    executor: heroku/default
-    docker:
-      - image: circleci/python:3.6.2-stretch-browsers
-        auth:
-          username: mydockerhub-user
-          password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
-    steps:
-      - checkout
-      - restore_cache:
-          key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}
-      - run:
-          name: Install Python deps in a venv
-          command: |
-            echo 'export TAG=0.1.${CIRCLE_BUILD_NUM}' >> $BASH_ENV
-            echo 'export IMAGE_NAME=python-circleci-docker' >> $BASH_ENV
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install --upgrade pip
-            pip install -r requirements.txt
-      - save_cache:
-          key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}
-          paths:
-            - "venv"
-      - run:
-          command: |
-            . venv/bin/activate
-            python -m pytest -v tests/test_script.py
-      - store_artifacts:
-          path: test-reports/
-          destination: tr1
-      - store_test_results:
-          path: test-reports/
-      - setup_remote_docker:
-          version: 19.03.13
-      - run:
-          name: Build and push Docker image
-          command: |
-            docker build -t $DOCKERHUB_USER/$IMAGE_NAME:$TAG .
-            docker login -u $DOCKERHUB_USER -p $DOCKER_HUB_PASSWORD_USER docker.io
-            docker push $DOCKERHUB_USER/$IMAGE_NAME:$TAG
-  deploy:
-    executor: heroku/default
-    steps:
-      - checkout
-      - run:
-          name: Storing previous commit
-          command: |
-            git rev-parse HEAD > ./commit.txt
-      - heroku/install
-      - setup_remote_docker:
-          version: 18.06.0-ce
-      - run:
-          name: Pushing to heroku registry
-          command: |
-            heroku container:login
-            #heroku ps:scale web=1 -a $HEROKU_APP_NAME
-            heroku container:push web -a $HEROKU_APP_NAME
-            heroku container:release web -a $HEROKU_APP_NAME
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-workflows:
-  build-test-deploy:
-    jobs:
-      - build-and-test
-      - deploy:
-          requires:
-            - build-and-test
-          filters:
-            branches:
-              only:
-                - main
+name: Build and deploy Python app to Azure Web App - creditcardf01
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python version
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+
+      - name: Create and start virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        
+      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+      
+      - name: Upload artifact for deployment jobs
+        uses: actions/upload-artifact@v2
+        with:
+          name: python-app
+          path: |
+            . 
+            !venv/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v2
+        with:
+          name: python-app
+          path: .
+          
+      - name: 'Deploy to Azure Web App'
+        uses: azure/webapps-deploy@v2
+        id: deploy-to-webapp
+        with:
+          app-name: 'creditcardf01'
+          slot-name: 'Production'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_909B911F7CC04D048A7DF7552412C72E }}
+        
 ```
 ## to create requirements.txt
 
@@ -195,26 +173,6 @@ git remote add origin <github_url>
 git push -u origin main
 ```
 
-## create a account at circle ci
-
-<a href="https://circleci.com/login/">Circle CI</a>
-
-## setup your project 
-
-<a href="https://app.circleci.com/projects/github/Avnish327030/setup/"> Setup project </a>
-
-## Select project setting in CircleCI and below environment variable
-
-```
-DOCKERHUB_USER
-DOCKER_HUB_PASSWORD_USER
-HEROKU_API_KEY
-HEROKU_APP_NAME
-HEROKU_EMAIL_ADDRESS
-DOCKER_IMAGE_NAME=wafercircle3270303
-```
-
-
 ## to update the modification
 
 ```
@@ -224,16 +182,9 @@ git push
 ```
 
 
-## #docker login -u $DOCKERHUB_USER -p $DOCKER_HUB_PASSWORD_USER docker.io
-
-
-
-
-
 ### deployment link:-
 
 
-     heroku :- https://creditcard-fault-detection.herokuapp.com/
+    Azure link :-https://creditcardf01.azurewebsites.net
      
      
-     AWS:- http://3.6.87.104:5000/
