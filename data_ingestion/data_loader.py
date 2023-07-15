@@ -4,7 +4,7 @@ class Data_Getter:
     """
     This class shall  be used for obtaining the data from the source for training.
 
-    Written By: Ashutosh
+    Written By: Neeraj
     Version: 1.0
     Revisions: None
 
@@ -21,7 +21,7 @@ class Data_Getter:
         Output: A pandas DataFrame.
         On Failure: Raise Exception
 
-         Written By: Ashutosh
+         Written By: Neeraj
         Version: 1.0
         Revisions: None
 
